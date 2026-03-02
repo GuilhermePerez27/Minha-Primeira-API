@@ -5,13 +5,13 @@ const express = require('express');
 const app = express();
 
 //3. Definindo porta
-const PORT = 80;
+const PORT = 3000;
 
 // 4. Middleware para JSON
 app.use(express.json());
 
 // 5. Criar primeiro endpoint
-app.get('/dados/1', (req, res) => {
+app.get('/', (req, res) => {
     res.json({
         mensagem: '🎉 Minha primeira API funcionando!',
         status: 'sucesso',
