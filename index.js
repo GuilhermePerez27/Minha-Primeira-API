@@ -38,11 +38,6 @@ app.get('/info', (req, res) => {
     });
 });
 
-// 8. Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-});
-
 // Dados em memória
 let filmes = [
     { id: 1, nome: "Avatar (2009)", arrecadacao: 2.923 , categoria: "14 anos (BR) / PG-13 (EUA)", duracao:177  },
@@ -99,4 +94,9 @@ app.get('/api/filmes/:id', (req, res) => {
 });
 
 app.listen(3000, () => console.log('🚀 API rodando na porta 3000'));
+
+// 8. Iniciar servidor
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+});
                         
