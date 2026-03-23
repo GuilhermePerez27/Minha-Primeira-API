@@ -93,10 +93,121 @@ app.get('/api/filmes/:id', (req, res) => {
     res.json(filme);
 });
 
+// POST /api/filmes - Criar novo filme
+app.post('/api/filmes', (req, res) => {
+    // 1. Pegar dados do body
+    const { nome, arrecadacao, categoria, duracao } = req.body;
+    
+    // 2. Validações
+    if (!nome || !arrecadacao || !categoria || !duracao) {
+        return res.status(400).json({
+            erro: "Campos obrigatórios: nome, arrecadacao, categoria, duracao"
+        });
+    }
+
+    if (typeof arrecadacao !== 'number' || arrecadacao <= 0) {
+        return res.status(400).json({
+            erro: "Arrecadação deve ser um número positivo"
+        });
+    }
+
+    if (typeof duracao !== 'number' || duracao <= 0) {
+        return res.status(400).json({
+            erro: "Duração deve ser um número positivo"
+        });
+    }
+    
+    // 3. Gerar novo ID (simples)
+    const novoId = filmes.length > 0 ? Math.max(...filmes.map(f => f.id)) + 1 : 1;
+    
+    // 4. Criar novo filme
+    const novoFilme = {
+        id: novoId,
+        nome,
+        arrecadacao,
+        categoria,
+        duracao
+    };
+    
+    // 5. Adicionar ao array
+    filmes.push(novoFilme);
+    
+    // 6. Retornar filme criado
+    res.status(201).json(novoFilme);
+});
+
+// PUT /api/filmes/:id - Atualizar filme
+app.put('/api/filmes/:id', (req, res) => {
+    // 1. Pegar ID da URL
+    const id = parseInt(req.params.id);
+    
+    // 2. Buscar filme no array
+    const filme = filmes.find(f => f.id === id);
+    
+    // 3. Verificar se existe
+    if (!filme) {
+        return res.status(404).json({ 
+            erro: "Filme não encontrado" 
+        });
+    }
+    
+    // 4. Extrair dados do body
+    const { nome, arrecadacao, categoria, duracao } = req.body;
+    
+    // 5. Validações
+    if (!nome || !arrecadacao || !categoria || !duracao) {
+        return res.status(400).json({
+            erro: "Campos obrigatórios: nome, arrecadacao, categoria, duracao"
+        });
+    }
+    
+    if (typeof arrecadacao !== 'number' || arrecadacao <= 0) {
+        return res.status(400).json({
+            erro: "Arrecadação deve ser um número positivo"
+        });
+    }
+
+    if (typeof duracao !== 'number' || duracao <= 0) {
+        return res.status(400).json({
+            erro: "Duração deve ser um número positivo"
+        });
+    }
+    
+    // 6. Atualizar dados do filme
+    filme.nome = nome;
+    filme.arrecadacao = arrecadacao;
+    filme.categoria = categoria;
+    filme.duracao = duracao;
+    
+    // 7. Retornar filme atualizado
+    res.json(filme);
+});
+
+// DELETE /api/filmes/:id - Remover filme
+app.delete('/api/filmes/:id', (req, res) => {
+    // 1. Pegar ID da URL
+    const id = parseInt(req.params.id);
+    
+    // 2. Encontrar índice do filme no array
+    const index = filmes.findIndex(f => f.id === id);
+    
+    // 3. Verificar se existe
+    if (index === -1) {
+        return res.status(404).json({ 
+            erro: "Filme não encontrado" 
+        });
+    }
+    
+    // 4. Remover do array
+    filmes.splice(index, 1);
+    
+    // 5. Retornar 204 No Content (sem body)
+    res.status(204).send();
+});
+
 app.listen(3000, () => console.log('🚀 API rodando na porta 3000'));
 
 // 8. Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });
-                        
