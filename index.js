@@ -43,7 +43,13 @@ let filmes = [
     { id: 1, nome: "Avatar (2009)", arrecadacao: 2.923 , categoria: "14 anos (BR) / PG-13 (EUA)", duracao:177  },
     { id: 2, nome: "Vingadores Ultimato", arrecadacao: 2.799, categoria: "12 anos (BR) / PG-13 (EUA)", duracao:181 },
     { id: 3, nome: "Titanic", arrecadacao: 2.264, categoria: "13 anos (BR) / PG-13 (EUA)", duracao:194 },
-    { id: 4, nome: "Rei Leão", arrecadacao: 1.663, categoria: "Livre L", duracao:89 }
+    { id: 4, nome: "Rei Leão", arrecadacao: 1.663, categoria: "Livre L", duracao:89 },
+    { id: 5, nome: "Star Wars: O Despertar da Força", arrecadacao: 2.071, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 138 },
+    { id: 6, nome: "Vingadores: Guerra Infinita", arrecadacao: 2.052, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 149 },
+    { id: 7, nome: "Homem-Aranha: Sem Volta Para Casa", arrecadacao: 1.921, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 148 },
+    { id: 8, nome: "Jurassic World", arrecadacao: 1.671, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 124 },
+    { id: 9, nome: "O Rei Leão (2019)", arrecadacao: 1.663, categoria: "Livre", duracao: 118 },
+    { id: 10, nome: "Os Vingadores", arrecadacao: 1.520, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 143 },
 ];
 
 // GET /api/filmes - Listar com filtros, ordenação e paginação
