@@ -1,219 +1,235 @@
-//1. Import do Express
+// Import do Express
 const express = require('express');
 
-//2. Criando Aplicação
+// Importa o banco
+const db = require('./database');
+
+// Importa JWT
+const jwt = require('jsonwebtoken');
+
+// Cria aplicação
 const app = express();
 
-//3. Definindo porta
-const PORT = 3000;
-
-// 4. Middleware para JSON
+// Middleware JSON
 app.use(express.json());
 
-// 5. Criar primeiro endpoint
+// Chave secreta
+const SECRET = "Roberto_Carlos";
+
+// ================= ROTAS PÚBLICAS =================
+
+// Rota raiz
 app.get('/', (req, res) => {
     res.json({
-        mensagem: '🎉 Minha primeira API funcionando!',
+        mensagem: '🎉 API de Filmes funcionando!',
         status: 'sucesso',
         timestamp: new Date().toISOString()
     });
 });
 
-// 6. Endpoint de informações
-app.get('/dados', (req, res) => {
-    res.json({
-        nome: 'Minha API REST',
-        versao: '1.0.0',
-        autor: 'Guilherme Perez',
-        descricao: 'Esta é uma API de exemplo para aprender'
-    });
-});
-
-// 7. Endpoint teste
+// Info
 app.get('/info', (req, res) => {
     res.json({
-        nome: 'Teste de Endpoint API REST',
+        nome: 'API de Filmes',
         versao: '1.0.0',
         autor: 'Guilherme Perez'
     });
 });
 
-// Dados em memória
-let filmes = [
-    { id: 1, nome: "Avatar (2009)", arrecadacao: 2.923 , categoria: "14 anos (BR) / PG-13 (EUA)", duracao:177  },
-    { id: 2, nome: "Vingadores Ultimato", arrecadacao: 2.799, categoria: "12 anos (BR) / PG-13 (EUA)", duracao:181 },
-    { id: 3, nome: "Titanic", arrecadacao: 2.264, categoria: "13 anos (BR) / PG-13 (EUA)", duracao:194 },
-    { id: 4, nome: "Rei Leão", arrecadacao: 1.663, categoria: "Livre L", duracao:89 },
-    { id: 5, nome: "Star Wars: O Despertar da Força", arrecadacao: 2.071, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 138 },
-    { id: 6, nome: "Vingadores: Guerra Infinita", arrecadacao: 2.052, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 149 },
-    { id: 7, nome: "Homem-Aranha: Sem Volta Para Casa", arrecadacao: 1.921, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 148 },
-    { id: 8, nome: "Jurassic World", arrecadacao: 1.671, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 124 },
-    { id: 9, nome: "O Rei Leão (2019)", arrecadacao: 1.663, categoria: "Livre", duracao: 118 },
-    { id: 10, nome: "Os Vingadores", arrecadacao: 1.520, categoria: "12 anos (BR) / PG-13 (EUA)", duracao: 143 },
-];
+// ================= LOGIN =================
 
-// GET /api/filmes - Listar com filtros, ordenação e paginação
-app.get('/api/filmes', (req, res) => {
-    const { categoria, arrecadacao_max, arrecadacao_min, ordem, direcao, pagina = 1, limite = 10 } = req.query;
-    
-    let resultado = filmes;
-    
-    // Filtros
-    if (categoria) resultado = resultado.filter(f => f.categoria === categoria);
-    if (arrecadacao_max) resultado = resultado.filter(f => f.arrecadacao <= parseFloat(arrecadacao_max));
-    if (arrecadacao_min) resultado = resultado.filter(f => f.arrecadacao >= parseFloat(arrecadacao_min));
-    
-    // Ordenação
-    if (ordem) {
-        resultado = resultado.sort((a, b) => {
-            if (ordem === 'arrecadacao') {
-                return direcao === 'desc' ? b.arrecadacao - a.arrecadacao : a.arrecadacao - b.arrecadacao;
-            }
-            if (ordem === 'nome') {
-                return direcao === 'desc' ? b.nome.localeCompare(a.nome) : a.nome.localeCompare(b.nome);
-            }
-        });
+app.post('/login', (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ erro: "Email obrigatório" });
     }
-    
-    // Paginação
-    const paginaNum = parseInt(pagina);
-    const limiteNum = parseInt(limite);
-    const inicio = (paginaNum - 1) * limiteNum;
-    const paginado = resultado.slice(inicio, inicio + limiteNum);
-    
-    res.json({
-        dados: paginado,
-        paginacao: {
-            pagina_atual: paginaNum,
-            itens_por_pagina: limiteNum,
-            total_itens: resultado.length,
-            total_paginas: Math.ceil(resultado.length / limiteNum)
+
+    const token = jwt.sign({ email }, SECRET, { expiresIn: '1h' });
+
+    res.json({ token });
+});
+
+// ================= MIDDLEWARE JWT =================
+
+function autenticarToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+
+    if (!authHeader) {
+        return res.status(401).json({ erro: "Token não enviado" });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ erro: "Token inválido" });
         }
+
+        req.user = user;
+        next();
+    });
+}
+
+// ================= USUÁRIOS =================
+
+app.post('/api/usuarios', (req, res) => {
+    const { nome, email } = req.body;
+
+    if (!nome || !email) {
+        return res.status(400).json({ erro: "Dados obrigatórios" });
+    }
+
+    const sql = `INSERT INTO usuarios (nome, email) VALUES (?, ?)`;
+
+    db.run(sql, [nome, email], function(err) {
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        res.status(201).json({
+            id: this.lastID,
+            nome,
+            email
+        });
     });
 });
 
-// GET /api/filmes/:id - Buscar por ID
+// ================= FILMES =================
+
+// LISTAR COM PAGINAÇÃO
+app.get('/api/filmes', (req, res) => {
+    const { arrecadacao_max, page = 1 } = req.query;
+
+    const limit = 10;
+    const offset = (page - 1) * limit;
+
+    let sql = "SELECT * FROM filmes";
+    let params = [];
+
+    if (arrecadacao_max) {
+        sql += " WHERE arrecadacao <= ?";
+        params.push(arrecadacao_max);
+    }
+
+    sql += " LIMIT ? OFFSET ?";
+    params.push(limit, offset);
+
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        res.json(rows);
+    });
+});
+
+// JOIN filmes + usuários
+app.get('/api/filmes-com-usuario', (req, res) => {
+    const sql = `
+        SELECT filmes.*, usuarios.nome AS usuario_nome
+        FROM filmes
+        LEFT JOIN usuarios ON filmes.usuario_id = usuarios.id
+    `;
+
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        res.json(rows);
+    });
+});
+
+// BUSCAR POR ID
 app.get('/api/filmes/:id', (req, res) => {
-    const filme = filmes.find(f => f.id === parseInt(req.params.id));
-    if (!filme) return res.status(404).json({ erro: "Filme não encontrado" });
-    res.json(filme);
+    db.get("SELECT * FROM filmes WHERE id = ?", [req.params.id], (err, row) => {
+
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        if (!row) {
+            return res.status(404).json({ erro: "Filme não encontrado" });
+        }
+
+        res.json(row);
+    });
 });
 
-// POST /api/filmes - Criar novo filme
-app.post('/api/filmes', (req, res) => {
-    // 1. Pegar dados do body
-    const { nome, arrecadacao, categoria, duracao } = req.body;
-    
-    // 2. Validações
+// CRIAR FILME (PROTEGIDO)
+app.post('/api/filmes', autenticarToken, (req, res) => {
+
+    const { nome, arrecadacao, categoria, duracao, usuario_id } = req.body;
+
     if (!nome || !arrecadacao || !categoria || !duracao) {
-        return res.status(400).json({
-            erro: "Campos obrigatórios: nome, arrecadacao, categoria, duracao"
-        });
+        return res.status(400).json({ erro: "Campos obrigatórios" });
     }
 
-    if (typeof arrecadacao !== 'number' || arrecadacao <= 0) {
-        return res.status(400).json({
-            erro: "Arrecadação deve ser um número positivo"
-        });
-    }
+    const sql = `
+        INSERT INTO filmes (nome, arrecadacao, categoria, duracao, usuario_id)
+        VALUES (?, ?, ?, ?, ?)
+    `;
 
-    if (typeof duracao !== 'number' || duracao <= 0) {
-        return res.status(400).json({
-            erro: "Duração deve ser um número positivo"
+    db.run(sql, [nome, arrecadacao, categoria, duracao, usuario_id], function(err) {
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        res.status(201).json({
+            id: this.lastID,
+            nome,
+            arrecadacao,
+            categoria,
+            duracao,
+            usuario_id
         });
-    }
-    
-    // 3. Gerar novo ID (simples)
-    const novoId = filmes.length > 0 ? Math.max(...filmes.map(f => f.id)) + 1 : 1;
-    
-    // 4. Criar novo filme
-    const novoFilme = {
-        id: novoId,
-        nome,
-        arrecadacao,
-        categoria,
-        duracao
-    };
-    
-    // 5. Adicionar ao array
-    filmes.push(novoFilme);
-    
-    // 6. Retornar filme criado
-    res.status(201).json(novoFilme);
+    });
 });
 
-// PUT /api/filmes/:id - Atualizar filme
+// ATUALIZAR
 app.put('/api/filmes/:id', (req, res) => {
-    // 1. Pegar ID da URL
-    const id = parseInt(req.params.id);
-    
-    // 2. Buscar filme no array
-    const filme = filmes.find(f => f.id === id);
-    
-    // 3. Verificar se existe
-    if (!filme) {
-        return res.status(404).json({ 
-            erro: "Filme não encontrado" 
-        });
-    }
-    
-    // 4. Extrair dados do body
     const { nome, arrecadacao, categoria, duracao } = req.body;
-    
-    // 5. Validações
-    if (!nome || !arrecadacao || !categoria || !duracao) {
-        return res.status(400).json({
-            erro: "Campos obrigatórios: nome, arrecadacao, categoria, duracao"
-        });
-    }
-    
-    if (typeof arrecadacao !== 'number' || arrecadacao <= 0) {
-        return res.status(400).json({
-            erro: "Arrecadação deve ser um número positivo"
-        });
-    }
 
-    if (typeof duracao !== 'number' || duracao <= 0) {
-        return res.status(400).json({
-            erro: "Duração deve ser um número positivo"
-        });
-    }
-    
-    // 6. Atualizar dados do filme
-    filme.nome = nome;
-    filme.arrecadacao = arrecadacao;
-    filme.categoria = categoria;
-    filme.duracao = duracao;
-    
-    // 7. Retornar filme atualizado
-    res.json(filme);
+    const sql = `
+        UPDATE filmes
+        SET nome = ?, arrecadacao = ?, categoria = ?, duracao = ?
+        WHERE id = ?
+    `;
+
+    db.run(sql, [nome, arrecadacao, categoria, duracao, req.params.id], function(err) {
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ erro: "Filme não encontrado" });
+        }
+
+        res.json({ mensagem: "Filme atualizado" });
+    });
 });
 
-// DELETE /api/filmes/:id - Remover filme
+// DELETE
 app.delete('/api/filmes/:id', (req, res) => {
-    // 1. Pegar ID da URL
-    const id = parseInt(req.params.id);
-    
-    // 2. Encontrar índice do filme no array
-    const index = filmes.findIndex(f => f.id === id);
-    
-    // 3. Verificar se existe
-    if (index === -1) {
-        return res.status(404).json({ 
-            erro: "Filme não encontrado" 
-        });
-    }
-    
-    // 4. Remover do array
-    filmes.splice(index, 1);
-    
-    // 5. Retornar 204 No Content (sem body)
-    res.status(204).send();
+    db.run("DELETE FROM filmes WHERE id = ?", [req.params.id], function(err) {
+
+        if (err) {
+            return res.status(500).json({ erro: err.message });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ erro: "Filme não encontrado" });
+        }
+
+        res.json({ mensagem: "Filme removido" });
+    });
 });
 
-app.listen(3000, () => console.log('🚀 API rodando na porta 3000'));
+// PORTA
+const PORT = process.env.PORT || 3000;
 
-// 8. Iniciar servidor
+// START
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });

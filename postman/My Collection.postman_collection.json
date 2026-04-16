@@ -1,86 +1,171 @@
 {
   "info": {
-    "_postman_id": "57e429bc-a121-48aa-9997-4d98852d9ecb",
-    "name": "My Collection",
-    "description": "### Welcome to Postman! This is your first collection. \n\nCollections are your starting point for building and testing APIs. You can use this one to:\n\n• Group related requests\n• Test your API in real-world scenarios\n• Document and share your requests\n\nUpdate the name and overview whenever you’re ready to make it yours.\n\n[Learn more about Postman Collections.](https://learning.postman.com/docs/collections/collections-overview/)",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "53433262",
-    "_collection_link": "https://go.postman.co/collection/53433262-57e429bc-a121-48aa-9997-4d98852d9ecb?source=collection_link"
+    "name": "API Filmes PRO",
+    "_postman_id": "99999999-aaaa-bbbb-cccc-123456789000",
+    "description": "Coleção automatizada com testes e fluxo completo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "usuario_id", "value": "" },
+    { "key": "filme_id", "value": "" }
+  ],
   "item": [
     {
-      "name": "Get data",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "postman-echo.com/get",
-          "host": [
-            "postman-echo",
-            "com"
-          ],
-          "path": [
-            "get"
-          ]
-        },
-        "description": "This is a GET request and it is used to \"get\" data from an endpoint. There is no request body for a GET request, but you can use query parameters to help specify the resource you want data on (e.g., in this request, we have `id=1`).\n\nA successful GET response will have a `200 OK` status, and should include some kind of response body - for example, HTML web content or JSON data."
-      },
-      "response": []
-    },
-    {
-      "name": "Post data",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test(\"Successful POST request\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-              "});",
-              ""
-            ]
-          }
-        }
-      ],
+      "name": "1 - Login",
       "request": {
         "method": "POST",
-        "header": [],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n\t\"name\": \"Add your name in the body\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
+          "raw": "{\n  \"email\": \"teste@email.com\"\n}"
         },
-        "url": {
-          "raw": "postman-echo.com/post",
-          "host": [
-            "postman-echo",
-            "com"
-          ],
-          "path": [
-            "post"
-          ]
-        },
-        "description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+        "url": "{{base_url}}/login"
       },
-      "response": []
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Login OK\", () => pm.response.to.have.status(200));",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set(\"token\", json.token);",
+              "postman.setNextRequest(\"2 - Criar Usuário\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - Criar Usuário",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Guilherme\",\n  \"email\": \"gui@email.com\"\n}"
+        },
+        "url": "{{base_url}}/api/usuarios"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Usuário criado\", () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set(\"usuario_id\", json.id);",
+              "postman.setNextRequest(\"3 - Criar Filme\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Criar Filme",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Vingadores\",\n  \"arrecadacao\": 2.8,\n  \"categoria\": \"12 anos\",\n  \"duracao\": 180,\n  \"usuario_id\": {{usuario_id}}\n}"
+        },
+        "url": "{{base_url}}/api/filmes"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Filme criado\", () => pm.response.to.have.status(201));",
+              "const json = pm.response.json();",
+              "pm.collectionVariables.set(\"filme_id\", json.id);",
+              "postman.setNextRequest(\"4 - Listar Filmes\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Listar Filmes",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/filmes"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Listagem OK\", () => pm.response.to.have.status(200));",
+              "postman.setNextRequest(\"5 - Buscar Filme por ID\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 - Buscar Filme por ID",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/filmes/{{filme_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Filme encontrado\", () => pm.response.to.have.status(200));",
+              "postman.setNextRequest(\"6 - Atualizar Filme\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 - Atualizar Filme",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Vingadores Atualizado\",\n  \"arrecadacao\": 3.0,\n  \"categoria\": \"12 anos\",\n  \"duracao\": 190\n}"
+        },
+        "url": "{{base_url}}/api/filmes/{{filme_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Filme atualizado\", () => pm.response.to.have.status(200));",
+              "postman.setNextRequest(\"7 - Deletar Filme\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 - Deletar Filme",
+      "request": {
+        "method": "DELETE",
+        "url": "{{base_url}}/api/filmes/{{filme_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Filme deletado\", () => pm.response.to.have.status(200));",
+              "postman.setNextRequest(null);"
+            ]
+          }
+        }
+      ]
     }
   ]
 }
